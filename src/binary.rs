@@ -4,6 +4,7 @@ use crate::{
 };
 use std::slice;
 
+#[allow(dead_code)]
 pub struct Binary {
     pub(crate) header: Vec<u16>,
     pub(crate) map: Vec<u16>,
