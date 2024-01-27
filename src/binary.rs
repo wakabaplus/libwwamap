@@ -4,7 +4,6 @@ use crate::{
 };
 use std::slice;
 
-#[allow(dead_code)]
 pub struct Binary {
     pub(crate) header: Vec<u16>,
     pub(crate) map: Vec<u16>,
@@ -12,36 +11,36 @@ pub struct Binary {
     pub(crate) str: Vec<u16>,
 }
 
+#[derive(PartialEq)]
+pub enum BinaryOption {
+    IgnoreChecksum
+}
+
 impl Binary {
-    pub fn decode(data: &[u8]) -> Result<Binary, Error> {
-        const END_OF_COMPRESS_CHUNK: [u8; 3] = [0, 0, 0];
-        for (offset, val) in data.windows(END_OF_COMPRESS_CHUNK.len()).enumerate() {
-            if val == END_OF_COMPRESS_CHUNK {
-                let (compressed_ptr, str_ptr) = data.split_at(offset + END_OF_COMPRESS_CHUNK.len());
-                let str = utils::u8_to_u16_and_destroy_u8(str_ptr.to_vec());
+    pub fn decode(data: &[u8], option: Option<BinaryOption>) -> Result<Binary, Error> {
+        const END_OF_COMPRESS_MAGIC: [u8; 3] = [0, 0, 0];
+        for (offset, val) in data.windows(END_OF_COMPRESS_MAGIC.len()).enumerate() {
+            if val == END_OF_COMPRESS_MAGIC {
+                let (compressed_ptr, str_ptr) = data.split_at(offset + END_OF_COMPRESS_MAGIC.len());
+                let str = utils::u8vec_to_u16vec_and_destroy_u8vec(str_ptr.to_vec());
 
                 let decompresed: Vec<u8> = Binary::decompress(compressed_ptr);
-
-                const HEADER_SIZE: usize = 100;
-                let decompressed_size: usize = decompresed.len();
-                if unlikely(decompressed_size < HEADER_SIZE) {
-                    return Err(Error::TooSmallLength {
-                        length: decompressed_size,
-                        least: HEADER_SIZE,
-                    });
+                if option != Some(BinaryOption::IgnoreChecksum) {
+                    let _ = Binary::validate(&decompresed)?;
                 }
 
+                const HEADER_SIZE: usize = 100;
                 let (header_ptr, map_ptr) = decompresed.split_at(HEADER_SIZE);
-                let header: Vec<u16> = utils::u8_to_u16_and_destroy_u8(header_ptr.to_vec());
+                let header: Vec<u16> = utils::u8vec_to_u16vec_and_destroy_u8vec(header_ptr.to_vec());
                 assert_eq!(header.len(), HEADER_SIZE / 2);
 
                 let map_size: u16 = header[23];
                 let map_area: u16 = map_size * map_size; // width * height
                 let map_length: usize = usize::from(map_area * 2); // object_parts, background_parts
 
-                let map: Vec<u16> = utils::u8_to_u16_and_destroy_u8(map_ptr[..map_length].to_vec());
+                let map: Vec<u16> = utils::u8vec_to_u16vec_and_destroy_u8vec(map_ptr[..map_length].to_vec());
                 let property: Vec<u16> =
-                    utils::u8_to_u16_and_destroy_u8(map_ptr[map_length..].to_vec());
+                    utils::u8vec_to_u16vec_and_destroy_u8vec(map_ptr[map_length..].to_vec());
 
                 return Ok(Binary {
                     header,
@@ -55,16 +54,42 @@ impl Binary {
     }
 
     fn decompress(ptr: &[u8]) -> Vec<u8> {
+        // Decompressed size will be larger than compressed size.
+        // Therefore, we allocate compressed size in advance.
         let mut data: Vec<u8> = Vec::with_capacity(ptr.len());
         let mut ptr_iter: slice::Windows<'_, u8> = ptr.windows(3);
+
+        // Don't consider checksum (first 2 bytes) as compressed data.
+        data.push(ptr_iter.next().unwrap()[0]);
+        data.push(ptr_iter.next().unwrap()[0]);
         while let Some(b) = ptr_iter.next() {
             data.push(b[0]);
             if b[0] == b[1] {
                 let loop_count: usize = b[2].into();
                 data.append(&mut vec![b[0]; loop_count]);
-                ptr_iter.nth(3);
+                ptr_iter.nth(1);
             }
         }
         data
+    }
+
+    fn validate(bin: &Vec<u8>) -> Result<(), Error> {
+        let correct_checksum= utils::u8arr_to_u16([bin[0], bin[1]]);
+        // Use u32 in case checksum > u16::MAX while working.
+        // The original can be up to 6144000 bytes (> u16::MAX bytes).
+        // It'll be truncated to u16 later.
+        let mut checksum: u32 = 0;
+
+        bin.iter().enumerate().skip(2).for_each(|(n, byte)| {
+            // If n > u32::MAX, it'll be truncated.
+            // Since n % 8, it's enough to get the lower 4 bits.
+            checksum += u32::from(*byte) * (n as u32 % 8 + 1);
+        });
+        let checksum: u16 = checksum as u16;
+        if unlikely(correct_checksum != checksum) {
+            Err(Error::InvalidChecksum { except: correct_checksum, actual: checksum})
+        } else {
+            Ok(())
+        }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{error::Error, utils, wwa::Binary};
+use crate::{binary, error::Error, utils};
 use log::warn;
 
 pub mod item_check;
@@ -18,7 +18,7 @@ pub enum Map {
 }
 
 impl Map {
-    pub fn parse(bin: &Binary) -> Vec<Self> {
+    pub fn parse(bin: &binary::Binary) -> Vec<Self> {
         const PROPERTY_LENGTH: usize = 60;
         let background_length: usize = usize::from(bin.header[17]) * PROPERTY_LENGTH;
         let mut map: Vec<Map> = Vec::with_capacity(background_length);

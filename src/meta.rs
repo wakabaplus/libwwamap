@@ -1,4 +1,4 @@
-use crate::{entity::player::Player, error::Error, utils, wwa::Binary};
+use crate::{binary, entity::player::Player, error::Error, utils};
 
 pub struct Meta {
     pub version: u8,
@@ -10,7 +10,7 @@ pub struct Meta {
 }
 
 impl Meta {
-    pub fn parse(bin: &Binary) -> Result<Self, Error> {
+    pub fn parse(bin: &binary::Binary) -> Result<Self, Error> {
         let version: u8 = utils::u16_to_first_u8_le(bin.header[1]);
         if version != 30 && version != 31 {
             return Err(Error::UnsupportedVersion { version });

@@ -1,10 +1,10 @@
 use super::MoveTo;
-use crate::{index, utils};
+use crate::{tiled, utils};
 use log::warn;
 
 pub struct Normal {
-    pub position: index::Map,
-    pub image: index::Image,
+    pub position: tiled::Map,
+    pub image: tiled::Image,
     pub is_layer: bool,
     pub move_to: MoveTo,
 }
@@ -20,8 +20,8 @@ impl Normal {
             warn!("Unexpected value: {layer_value} (should be 0 or 1)")
         }
         Self {
-            position: index::Map::try_from(&bin[19..]).unwrap(),
-            image: index::Image::Object(0, 0),
+            position: tiled::Map::try_from(&bin[19..]).unwrap(),
+            image: tiled::Image::Object(0, 0),
             is_layer,
             move_to: MoveTo::try_from(utils::u16_to_first_u8_le(bin[16])).unwrap(),
         }
@@ -31,8 +31,8 @@ impl Normal {
 impl Default for Normal {
     fn default() -> Self {
         Self {
-            position: index::Map::default(),
-            image: index::Image::Object(u16::default(), u16::default()),
+            position: tiled::Map::default(),
+            image: tiled::Image::Object(u16::default(), u16::default()),
             is_layer: false,
             move_to: MoveTo::None,
         }

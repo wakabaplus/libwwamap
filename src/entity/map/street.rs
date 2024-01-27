@@ -1,16 +1,16 @@
-use crate::index;
+use crate::tiled;
 
 pub struct Street {
-    pub position: index::Map,
-    pub image: index::Image,
+    pub position: tiled::Map,
+    pub image: tiled::Image,
 }
 
 impl Street {
     pub const CHUNK_ID: u8 = 0;
     pub fn parse(bin: &[u16]) -> Self {
         Self {
-            position: index::Map::try_from(&bin[19..]).unwrap(),
-            image: index::Image::Object(0, 0),
+            position: tiled::Map::try_from(&bin[19..]).unwrap(),
+            image: tiled::Image::Object(0, 0),
         }
     }
 }
@@ -18,8 +18,8 @@ impl Street {
 impl Default for Street {
     fn default() -> Self {
         Self {
-            position: index::Map::default(),
-            image: index::Image::Object(u16::default(), u16::default()),
+            position: tiled::Map::default(),
+            image: tiled::Image::Object(u16::default(), u16::default()),
         }
     }
 }

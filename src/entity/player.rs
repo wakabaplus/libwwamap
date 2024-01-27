@@ -1,22 +1,21 @@
 use super::Status;
-use crate::{binary::Binary, index};
+use crate::{binary::Binary, tiled};
 
 pub struct Player {
-    pub position: index::Map,
+    pub position: tiled::Map,
+    pub gameover_position: tiled::Map,
     pub energy_max: u16,
     pub status: Status,
-    pub gameover_position: index::Map,
 }
 
 impl Player {
     pub fn parse(bin: &Binary) -> Self {
         let bin = &bin.header;
-        println!("{:?}", bin);
         Self {
-            position: index::Map::try_from(&bin[10..]).unwrap(),
-            status: Status::try_from(&bin[5..]).unwrap(),
+            position: tiled::Map::try_from(&bin[19..]).unwrap(),
+            gameover_position: tiled::Map::try_from(&bin[21..]).unwrap(),
             energy_max: bin[16],
-            gameover_position: index::Map::try_from(&bin[21..]).unwrap(),
+            status: Status::try_from(&bin[5..]).unwrap(),
         }
     }
 }
