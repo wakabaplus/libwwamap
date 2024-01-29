@@ -1,5 +1,5 @@
 use super::MoveTo;
-use crate::{tiled, utils};
+use crate::tiled;
 use log::warn;
 
 pub struct Normal {
@@ -13,7 +13,7 @@ impl Normal {
     pub const CHUNK_ID: u8 = 0;
     pub fn parse(bin: &[u16]) -> Self {
         let mut is_layer = false;
-        let layer_value = utils::u16_to_first_u8_le(bin[2]);
+        let layer_value = bin[2].to_le_bytes()[0];
         if layer_value == 1 {
             is_layer = true;
         } else if layer_value != 0 {
@@ -23,7 +23,7 @@ impl Normal {
             position: tiled::Map::try_from(&bin[19..]).unwrap(),
             image: tiled::Image::Object(0, 0),
             is_layer,
-            move_to: MoveTo::try_from(utils::u16_to_first_u8_le(bin[16])).unwrap(),
+            move_to: MoveTo::try_from(bin[16].to_le_bytes()[0]).unwrap(),
         }
     }
 }

@@ -1,6 +1,5 @@
 use crate::{
-    error::Error,
-    utils::{self, unlikely},
+    error::Error, utils::unlikely, ext::{U8Ext, VecExt}
 };
 use std::slice;
 
@@ -22,7 +21,7 @@ impl Binary {
         for (offset, val) in data.windows(END_OF_COMPRESS_MAGIC.len()).enumerate() {
             if val == END_OF_COMPRESS_MAGIC {
                 let (compressed_ptr, str_ptr) = data.split_at(offset + END_OF_COMPRESS_MAGIC.len());
-                let str = utils::u8vec_to_u16vec_and_destroy_u8vec(str_ptr.to_vec());
+                let str: Vec<u16> = str_ptr.to_vec().into_u16();
 
                 let decompresed: Vec<u8> = Binary::decompress(compressed_ptr);
                 if option != Some(BinaryOption::IgnoreChecksum) {
@@ -31,21 +30,20 @@ impl Binary {
 
                 const HEADER_SIZE: usize = 100;
                 let (header_ptr, map_ptr) = decompresed.split_at(HEADER_SIZE);
-                let header: Vec<u16> = utils::u8vec_to_u16vec_and_destroy_u8vec(header_ptr.to_vec());
+                let header: Vec<u16> = header_ptr.to_vec().into_u16();
                 assert_eq!(header.len(), HEADER_SIZE / 2);
 
                 let map_size: u16 = header[23];
                 let map_area: u16 = map_size * map_size; // width * height
                 let map_length: usize = usize::from(map_area * 2); // object_parts, background_parts
 
-                let map: Vec<u16> = utils::u8vec_to_u16vec_and_destroy_u8vec(map_ptr[..map_length].to_vec());
-                let property: Vec<u16> =
-                    utils::u8vec_to_u16vec_and_destroy_u8vec(map_ptr[map_length..].to_vec());
+                let map: Vec<u16> = map_ptr[..map_length].to_vec().into_u16();
+                let object: Vec<u16> = map_ptr[map_length..].to_vec().into_u16();
 
                 return Ok(Binary {
                     header,
                     map,
-                    object: property,
+                    object,
                     str,
                 });
             }
@@ -74,16 +72,12 @@ impl Binary {
     }
 
     fn validate(bin: &Vec<u8>) -> Result<(), Error> {
-        let correct_checksum= utils::u8arr_to_u16([bin[0], bin[1]]);
-        // Use u32 in case checksum > u16::MAX while working.
-        // The original can be up to 6144000 bytes (> u16::MAX bytes).
-        // It'll be truncated to u16 later.
-        let mut checksum: u32 = 0;
+        let correct_checksum: u16= [bin[0], bin[1]].into_u16();
+        let mut checksum: i32 = 0;
 
         bin.iter().enumerate().skip(2).for_each(|(n, byte)| {
-            // If n > u32::MAX, it'll be truncated.
-            // Since n % 8, it's enough to get the lower 4 bits.
-            checksum += u32::from(*byte) * (n as u32 % 8 + 1);
+            // Even if n > i32::MAX, since n % 8, it's used only for the lower 4 bits.
+            checksum += i32::from(*byte as i8) * (n as i32 % 8 + 1);
         });
         let checksum: u16 = checksum as u16;
         if unlikely(correct_checksum != checksum) {

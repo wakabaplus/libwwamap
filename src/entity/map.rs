@@ -1,4 +1,4 @@
-use crate::{binary, error::Error, utils};
+use crate::{binary, error::Error};
 use log::warn;
 
 pub mod item_check;
@@ -37,7 +37,7 @@ impl Map {
     }
 
     pub fn parse_chunk(chunk: &[u16]) -> Result<Self, Error> {
-        let ty = utils::u16_to_first_u8_le(chunk[3]);
+        let ty = chunk[3].to_le_bytes()[0];
         match ty {
             n if n == street::Street::CHUNK_ID => Ok(Self::Street(street::Street::parse(chunk))),
             _ => Err(Error::InvalidByte { byte: ty }),

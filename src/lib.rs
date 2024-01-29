@@ -1,13 +1,11 @@
-pub mod binary;
 mod entity;
 mod error;
+mod utils;
+
+pub mod binary;
 pub mod tiled;
 pub mod meta;
-mod utils;
+pub mod ext;
 
 // #[cfg(target_family = "wasm")]
 // mod wasm;
-
-pub mod wwa {
-    pub use crate::{entity::map::Map, entity::object::Object, tiled};
-}

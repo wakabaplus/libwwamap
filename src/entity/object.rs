@@ -1,4 +1,4 @@
-use crate::{binary::Binary, error::Error, utils};
+use crate::{binary::Binary, error::Error};
 use log::warn;
 pub mod buy;
 pub mod door;
@@ -77,7 +77,7 @@ impl Object {
     }
 
     pub fn parse_chunk(chunk: &[u16]) -> Result<Self, Error> {
-        let ty = utils::u16_to_first_u8_le(chunk[3]);
+        let ty = chunk[3].to_le_bytes()[0];
         match ty {
             n if n == normal::Normal::CHUNK_ID => Ok(Self::Normal(normal::Normal::parse(chunk))),
             _ => Err(Error::InvalidByte { byte: ty }),
