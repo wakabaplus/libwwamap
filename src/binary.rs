@@ -1,7 +1,7 @@
 use crate::{
     error::Error, utils::unlikely, ext::{U8Ext, VecExt}
 };
-use std::slice;
+use core::slice;
 
 pub struct Binary {
     pub(crate) header: Vec<u16>,

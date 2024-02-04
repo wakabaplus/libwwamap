@@ -16,4 +16,5 @@ fn meta_check() {
     assert_eq!(meta.player.status.strength, 40);
     assert_eq!(meta.player.status.defence, 20);
     assert_eq!(meta.player.status.gold, 0);
+    dbg!(meta.string.list);
 }

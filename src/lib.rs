@@ -1,6 +1,7 @@
 mod entity;
 mod error;
 mod utils;
+pub mod string;
 
 pub mod binary;
 pub mod tiled;

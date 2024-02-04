@@ -1,9 +1,9 @@
-use crate::{binary, entity::player::Player, error::Error};
+use crate::{binary, entity::player::Player, error::Error, string::StringList};
 
 pub struct Meta {
     pub version: u8,
     pub player: Player,
-    pub msg_max: u16,
+    pub string: StringList,
     // pub imgfile: String,
     // pub password: String,
     // pub title: String,
@@ -15,13 +15,12 @@ impl Meta {
         if version != 30 && version != 31 {
             return Err(Error::UnsupportedVersion { version });
         }
-        let msg_max: u16 = bin.header[24];
-
+        let string: StringList = StringList::try_from(bin)?;
         let player: Player = Player::parse(bin);
         Ok(Self {
             player,
             version,
-            msg_max,
+            string
         })
     }
 }

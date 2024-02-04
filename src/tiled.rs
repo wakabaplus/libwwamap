@@ -1,5 +1,5 @@
 use crate::error::Error;
-use std::fmt;
+use core::fmt;
 
 #[derive(Default)]
 pub struct Map {
