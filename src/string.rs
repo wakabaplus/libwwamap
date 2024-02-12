@@ -1,6 +1,9 @@
 use crate::{binary, error};
-use core::char::{self, DecodeUtf16Error};
-use core::{fmt, str::FromStr};
+use core::char::{decode_utf16, DecodeUtf16Error};
+use core::fmt::{self, Display, Debug, Formatter};
+use core::str::FromStr;
+
+#[derive(Clone)]
 pub struct WWAString {
     vec: Vec<u16>,
 }
@@ -15,46 +18,68 @@ impl FromStr for WWAString {
 
 impl From<Vec<u16>> for WWAString {
     fn from(vec: Vec<u16>) -> Self {
-        Self{ vec }
+        const MAX_STRING: usize = 755;
+        assert!(vec.len() <= MAX_STRING);
+        Self { vec }
     }
 }
 
-impl fmt::Display for WWAString {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s: String = core::char::decode_utf16(self.vec.iter().cloned())
-        .map(|c| c.unwrap())
+impl Display for WWAString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let s: String = decode_utf16(self.vec.iter().cloned())
+        .map(|c: Result<char, DecodeUtf16Error>| c.unwrap())
         .collect();
         writeln!(f, "{:?}", s)
     }
 }
 
-impl fmt::Debug for WWAString {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl Debug for WWAString {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self)
     }
 }
 
-pub struct StringList {
+impl PartialEq<&str> for WWAString {
+    fn eq(&self, other: &&str) -> bool {
+        self.vec == other.encode_utf16().collect::<Vec<u16>>()
+    }
+}
+
+pub(crate) struct StringList {
     pub max: u16,
     pub list: Vec<WWAString>,
+    pub password: WWAString,
+    pub title: WWAString,
+    pub img_file: WWAString,
+    pub new_string_list: Vec<WWAString>,
 }
 
 impl TryFrom<&binary::Binary> for StringList {
     type Error = error::Error;
 
     fn try_from(bin: &binary::Binary) -> Result<Self, Self::Error> {
-        const MAX_STRING: usize = 755;
         let max: u16 = bin.header[24];
-        let str = bin.str.split(|&b| b == 0);
+        let mut str = bin.str.split(|&b| b == 0);
+        let password = WWAString::from(str.next().unwrap().to_vec());
         let mut list: Vec<WWAString> = Vec::with_capacity(max as usize);
-        for s in str {
-            let c: Vec<char> = char::decode_utf16(s.to_vec()).map(|r: Result<char, DecodeUtf16Error>| r.unwrap()).collect();
-            assert!(c.len() <= MAX_STRING);
-            list.push(WWAString::from(s.to_vec()));
+        for _ in 0..max {
+            list.push(WWAString::from(str.next().unwrap().to_vec()));
+        }
+        let title = WWAString::from(str.next().unwrap().to_vec());
+        let _ = WWAString::from(str.next().unwrap().to_vec()); // older password
+        let _ = WWAString::from(str.next().unwrap().to_vec()); // older img_file (bmp)
+        let img_file  = WWAString::from(str.next().unwrap().to_vec());
+        let mut new_string_list: Vec<WWAString> = Vec::with_capacity(20);
+        for _ in 0..20 {
+            new_string_list.push(WWAString::from(str.next().unwrap().to_vec()));
         }
         Ok(Self {
             max,
-            list
+            list,
+            password,
+            title,
+            img_file,
+            new_string_list
         })
     }
 }

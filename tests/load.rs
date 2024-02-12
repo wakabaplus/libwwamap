@@ -16,5 +16,14 @@ fn meta_check() {
     assert_eq!(meta.player.status.strength, 40);
     assert_eq!(meta.player.status.defence, 20);
     assert_eq!(meta.player.status.gold, 0);
-    dbg!(meta.string.list);
+    assert_eq!(meta.password, "");
+    assert_eq!(meta.title, "Cave Dungeon Level 1");
+    assert_eq!(meta.img_file, "caves01.gif");
+    assert_eq!(meta.confirm_link_message, "");
+    assert_eq!(meta.insufficient_funds_message, "");
+    assert_eq!(meta.no_item_message, "");
+    assert_eq!(meta.use_item_message, "");
+    assert_eq!(meta.get_item_message, "");
+    assert_eq!(meta.full_item_message, "");
+    assert_eq!(meta.sound_confirm_message, "");
 }
