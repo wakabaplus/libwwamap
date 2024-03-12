@@ -1,5 +1,10 @@
 use crate::{
-    error::Error, utils::unlikely, ext::{U8Ext, VecExt}
+    error::Error,
+    utils::unlikely,
+    ext::{
+        U8Ext,
+        VecExt
+    }
 };
 use core::slice;
 

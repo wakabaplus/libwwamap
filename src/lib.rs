@@ -4,7 +4,7 @@ mod utils;
 
 pub mod binary;
 pub mod ext;
-pub mod meta;
+pub mod wwamap;
 pub mod string;
 pub mod tiled;
 
