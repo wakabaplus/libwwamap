@@ -2,13 +2,13 @@ use crate::{
     binary,
     entity::player::Player,
     error::Error,
-    string::list::StringList
+    string::array::StringArray
 };
 
 pub struct WWAMap {
     pub version: u8,
     pub player: Player,
-    pub string: StringList,
+    pub string: StringArray,
 }
 
 impl WWAMap {
@@ -18,7 +18,7 @@ impl WWAMap {
             return Err(Error::UnsupportedVersion { version });
         }
 
-        let message = StringList::try_from(bin).unwrap();
+        let message: StringArray = StringArray::try_from(bin).unwrap();
         let player: Player = Player::parse(bin);
 
         Ok(Self {

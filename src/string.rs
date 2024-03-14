@@ -1,5 +1,6 @@
-pub mod list;
+pub mod array;
 
+use std::string;
 use crate::error;
 use core::{
     char::{
@@ -38,7 +39,7 @@ impl From<Vec<u16>> for WWAString {
 
 impl Display for WWAString {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let s: String = decode_utf16(self.vec.iter().cloned())
+        let s: string::String = decode_utf16(self.vec.iter().cloned())
         .map(|c: Result<char, DecodeUtf16Error>| c.unwrap())
         .collect();
         writeln!(f, "{:?}", s)
