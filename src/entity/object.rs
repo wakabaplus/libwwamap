@@ -1,5 +1,5 @@
-use crate::{binary::Binary, error::Error};
-use log::warn;
+use crate::error::Error;
+
 pub mod buy;
 pub mod door;
 pub mod item;
@@ -50,37 +50,14 @@ pub enum Object {
     // LocalGate = 18,
 }
 
-impl Object {
-    pub fn parse(bin: &Binary) -> Vec<Self> {
-        const PROPERTY_LENGTH: usize = 60;
-        // The object's properties follow the background's.
-        let background_length: usize = usize::from(bin.header[17]) * PROPERTY_LENGTH;
-        let object_length: usize = usize::from(bin.header[18]) * PROPERTY_LENGTH;
-        let bin_len = bin.object.len();
-        if bin_len < background_length + object_length {
-            warn!("Unexpected property size. {bin_len} < {background_length}(bkg) + {object_length}(obj)")
-        }
-
-        let mut object: Vec<Object> = Vec::with_capacity(object_length);
-        for (id, prop) in bin.object[background_length..]
-            .chunks_exact(PROPERTY_LENGTH)
-            .enumerate()
-        {
-            if let Ok(c) = Object::parse_chunk(prop) {
-                object[id] = c;
-            } else {
-                let ty: u16 = prop[3];
-                warn!("Object ID {id}: Unknown chunk type {ty}.")
-            }
-        }
-        object
-    }
-
-    pub fn parse_chunk(chunk: &[u16]) -> Result<Self, Error> {
-        let ty = chunk[3].to_le_bytes()[0];
-        match ty {
-            n if n == normal::Normal::CHUNK_ID => Ok(Self::Normal(normal::Normal::parse(chunk))),
-            _ => Err(Error::InvalidByte { byte: ty }),
-        }
+impl TryFrom<&[u8]> for Object {
+    type Error = Error;
+    fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
+        let b = chunk[6];
+        let ty = match b {
+            n if n == normal::CHUNK_ID => normal::Normal::try_from(chunk),
+            _ => Err(Error::InvalidByte { byte: b }),
+        }?;
+        Ok(Self::Normal(ty))
     }
 }

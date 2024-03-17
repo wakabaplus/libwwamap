@@ -29,13 +29,13 @@ impl Index<Meta> for StringArray {
     fn index(&self, attr: Meta) -> &Self::Output {
         match attr {
             Meta::ConfirmLink => &self.message[5],
-            Meta::InsufficientFunds=> &self.message[6],
-            Meta::NoItem=> &self.message[7],
-            Meta::UseItem=> &self.message[8],
+            Meta::InsufficientFunds => &self.message[6],
+            Meta::NoItem => &self.message[7],
+            Meta::UseItem => &self.message[8],
             Meta::GetItem => &self.extend_message[0],
-            Meta::FullItem=> &self.extend_message[1],
-            Meta::SoundConfirm=> &self.extend_message[2],
-            Meta::Title=> &self.title,
+            Meta::FullItem => &self.extend_message[1],
+            Meta::SoundConfirm => &self.extend_message[2],
+            Meta::Title => &self.title,
             Meta::ImgFile => &self.img_file,
             Meta::Password => &self.password,
         }

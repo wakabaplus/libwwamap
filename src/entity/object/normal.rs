@@ -1,6 +1,5 @@
 use super::MoveTo;
-use crate::tiled;
-use log::warn;
+use crate::{error::Error, tiled};
 
 pub struct Normal {
     pub position: tiled::Map,
@@ -9,22 +8,22 @@ pub struct Normal {
     pub move_to: MoveTo,
 }
 
-impl Normal {
-    pub const CHUNK_ID: u8 = 0;
-    pub fn parse(bin: &[u16]) -> Self {
-        let mut is_layer = false;
-        let layer_value = bin[2].to_le_bytes()[0];
-        if layer_value == 1 {
-            is_layer = true;
-        } else if layer_value != 0 {
-            warn!("Unexpected value: {layer_value} (should be 0 or 1)")
-        }
-        Self {
-            position: tiled::Map::try_from(&bin[19..]).unwrap(),
+pub const CHUNK_ID: u8 = 0;
+
+impl TryFrom<&[u8]> for Normal {
+    type Error = Error;
+    fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
+        // TODO: Treat chunk[2] as bool
+        let is_layer = chunk[4].to_le_bytes()[0] == 1;
+        let position = tiled::Map::try_from(&chunk[38..])?;
+        let move_to = MoveTo::try_from(chunk[32])?;
+
+        Ok(Self {
+            position,
             image: tiled::Image::Object(0, 0),
             is_layer,
-            move_to: MoveTo::try_from(bin[16].to_le_bytes()[0]).unwrap(),
-        }
+            move_to,
+        })
     }
 }
 

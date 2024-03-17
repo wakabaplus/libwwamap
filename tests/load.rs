@@ -1,4 +1,4 @@
-use libwwamap::{binary::Binary, string::array::Meta, tiled, wwamap::WWAMap
+pub(crate) use libwwamap::{binary::Binary, string::array::Meta, tiled, wwamap::WWAMap
 };
 use std::{
     fs,
@@ -7,6 +7,7 @@ use std::{
 
 #[test]
 fn meta_check() {
+    libwwamap::apply_log();
     let path = Path::new("tests/wwamk310/mapdata/caves01.dat");
     let buf: Vec<u8> = fs::read(path).unwrap();
 

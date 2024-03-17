@@ -37,3 +37,14 @@ impl TryFrom<&[u16]> for Map {
         Ok(Self { x: *x, y: *y })
     }
 }
+
+impl TryFrom<&[u8]> for Map {
+    type Error = Error;
+
+    fn try_from(arr: &[u8]) -> Result<Self, Self::Error> {
+        let [x_hb, x_lb, y_hb, y_lb, ..] = arr else {
+            return Err(Error::InvalidArgument);
+        };
+        Ok(Self { x: u16::from_le_bytes([*x_hb, *x_lb]), y: u16::from_le_bytes([*y_hb, *y_lb]) })
+    }
+}

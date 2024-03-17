@@ -10,3 +10,8 @@ pub mod tiled;
 
 // #[cfg(target_family = "wasm")]
 // mod wasm;
+
+pub fn apply_log() {
+    use simple_logger::SimpleLogger;
+    SimpleLogger::new().init().unwrap();
+}
