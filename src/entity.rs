@@ -1,8 +1,20 @@
-use log::{debug, warn};
-
-use crate::{binary::Binary, error::Error};
-use self::{map::Map, object::Object};
-use std::cmp;
+use crate::{
+    binary::Binary,
+    error::Error
+};
+use log::{
+    debug,
+    info,
+    warn
+};
+use self::{
+    map::Map,
+    object::Object
+};
+use std::{
+    any,
+    cmp
+};
 
 pub mod map;
 pub mod object;
@@ -35,45 +47,38 @@ pub struct EntityArray {
     map: Vec<Option<Map>>
 }
 
+fn extract<T>(count: usize, bin: &[u8]) -> Vec<Option<T>>
+where T: for<'a> TryFrom<&'a [u8], Error = Error>,
+{
+    const CHUNK_SIZE: usize = 60;
+    let mut entity: Vec<Option<T>> = Vec::with_capacity(count * CHUNK_SIZE);
+    let mut iter = bin.chunks_exact(CHUNK_SIZE);
+    for id in 0..count {
+        let mut e: Option<T> = None;
+        if let Some(chunk) = iter.next() {
+            let obj: Result<T, Error> = T::try_from(chunk);
+            debug!("{} ID {id}: {:?}", any::type_name::<T>(), chunk);
+            if let Ok(c) = obj {
+                e = Some(c);
+            } else {
+                warn!("{} ID {id}: {:?} {:?}", any::type_name::<T>(), obj.err(), chunk);
+            }
+        } else {
+            info!("{} ID {id}: None", any::type_name::<T>());
+        }
+        assert_eq!(entity.len(), id);
+        entity.push(e);
+    }
+    entity
+}
+
 impl From<&Binary> for EntityArray {
     fn from(bin: &Binary) -> Self {
-        const CHUNK_SIZE: usize = 60;
-        // The object's properties follow the background's.
-        let map_count = cmp::max(bin.header[17].div_ceil(50) * 50, 200);
-        let object_count = cmp::max(bin.header[18].div_ceil(50) * 50, 200);
-        let map_length = usize::from(map_count) * CHUNK_SIZE;
-        let object_length = usize::from(object_count) * CHUNK_SIZE;
+        let map_count = usize::from(cmp::max(bin.header[17].div_ceil(50) * 50, 200));
+        let object_count = usize::from(cmp::max(bin.header[18].div_ceil(50) * 50, 200));
+        let object: Vec<Option<Object>> = extract::<Object>(object_count, &bin.object);
+        let map: Vec<Option<Map>> = extract::<Map>(map_count, &bin.map);
 
-        let mut object: Vec<Option<Object>> = std::iter::repeat_with(|| None).take(object_length).collect::<Vec<_>>();
-        let mut map: Vec<Option<Map>> = std::iter::repeat_with(|| None).take(map_length).collect::<Vec<_>>();
-
-        for (id, chunk) in bin.object
-            .chunks_exact(CHUNK_SIZE)
-            .enumerate()
-        {
-            debug!("Object {id}: {:?}", chunk);
-            let obj = Object::try_from(chunk);
-            if let Ok(c) = obj {
-                object[id] = Some(c);
-            } else {
-                warn!("Object ID {id}: {:?}
-                {:?}", obj.err(), chunk);
-            }
-        }
-
-        for (id, chunk) in bin.map
-            .chunks_exact(CHUNK_SIZE)
-            .enumerate()
-        {
-            debug!("Object {id}: {:?}", chunk);
-            let m = Map::try_from(chunk);
-            if let Ok(c) = m {
-                map[id] = Some(c);
-            } else {
-                warn!("Map ID {id}: {:?}
-                {:?}", m.err(), chunk);
-            }
-        }
         Self { object, map }
     }
 }

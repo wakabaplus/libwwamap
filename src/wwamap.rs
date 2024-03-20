@@ -1,6 +1,9 @@
 use crate::{
     binary,
-    entity::{EntityArray, player::Player},
+    entity::{
+        EntityArray,
+        player::Player
+    },
     error::Error,
     string::array::StringArray
 };

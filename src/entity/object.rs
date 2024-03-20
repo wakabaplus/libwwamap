@@ -34,9 +34,16 @@ impl TryFrom<u8> for MoveTo {
     }
 }
 
+impl TryFrom<&[u8]> for MoveTo {
+    type Error = Error;
+    fn try_from(v: &[u8]) -> Result<Self, Self::Error> {
+        Self::try_from(v[32])
+    }
+}
+
 pub enum Object {
     Normal(normal::Normal),
-    // Message = 1,
+    Message(message::Message),
     // UrlGate = 2,
     // Status = 3,
     // Item = 4,
@@ -54,10 +61,10 @@ impl TryFrom<&[u8]> for Object {
     type Error = Error;
     fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
         let b = chunk[6];
-        let ty = match b {
-            n if n == normal::CHUNK_ID => normal::Normal::try_from(chunk),
+        match b {
+            n if n == normal::CHUNK_ID => Ok(Self::Normal(normal::Normal::try_from(chunk)?)),
+            n if n == message::CHUNK_ID => Ok(Self::Message(message::Message::try_from(chunk)?)),
             _ => Err(Error::InvalidByte { byte: b }),
-        }?;
-        Ok(Self::Normal(ty))
+        }
     }
 }

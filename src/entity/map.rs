@@ -16,13 +16,13 @@ pub enum Map {
     // ItemCheck = 5,
 }
 
-impl TryFrom<&[u16]> for Map {
+impl TryFrom<&[u8]> for Map {
     type Error = Error;
-    fn try_from(chunk: &[u16]) -> Result<Self, Self::Error> {
-        let ty = chunk[3].to_le_bytes()[0];
-        match ty {
-            n if n == street::Street::CHUNK_ID => Ok(Self::Street(street::Street::parse(chunk))),
-            _ => Err(Error::InvalidByte { byte: ty }),
+    fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
+        let b = chunk[6];
+        match b {
+            n if n == street::CHUNK_ID => Ok(Self::Street(street::Street::try_from(chunk)?)),
+            _ => Err(Error::InvalidByte { byte: b }),
         }
     }
 }

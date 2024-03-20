@@ -1,4 +1,7 @@
-use crate::{binary::Binary, error::Error};
+use crate::{
+    binary::Binary,
+    error::Error
+};
 use core::ops::Index;
 use super::WWAString;
 

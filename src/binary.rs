@@ -10,7 +10,7 @@ use core::slice;
 
 pub struct Binary {
     pub(crate) header: Vec<u16>,
-    pub(crate) map: Vec<u16>,
+    pub(crate) map: Vec<u8>,
     pub(crate) object: Vec<u8>,
     pub(crate) str: Vec<u16>,
 }
@@ -42,7 +42,7 @@ impl Binary {
                 let map_area: u16 = map_size * map_size; // width * height
                 let map_length: usize = usize::from(map_area * 2); // object_parts, background_parts
 
-                let map: Vec<u16> = map_ptr[..map_length].to_vec().into_u16();
+                let map: Vec<u8> = map_ptr[..map_length].to_vec();
                 let object: Vec<u8> = map_ptr[map_length..].to_vec();
 
                 return Ok(Binary {

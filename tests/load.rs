@@ -1,4 +1,8 @@
-pub(crate) use libwwamap::{binary::Binary, string::array::Meta, tiled, wwamap::WWAMap
+pub(crate) use libwwamap::{
+    binary::Binary,
+    string::array::Meta,
+    tiled,
+    wwamap::WWAMap
 };
 use std::{
     fs,
