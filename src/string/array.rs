@@ -1,9 +1,6 @@
-use crate::{
-    binary::Binary,
-    error::Error
-};
-use core::ops::Index;
 use super::WWAString;
+use crate::{binary::Binary, error::Error};
+use core::ops::Index;
 
 pub struct StringArray {
     pub max_message: u16,
@@ -75,6 +72,13 @@ impl TryFrom<&Binary> for StringArray {
             extend_message.push(WWAString::from(str.next().unwrap().to_vec()));
         }
 
-        Ok(Self { max_message, message, extend_message, password, title, img_file })
+        Ok(Self {
+            max_message,
+            message,
+            extend_message,
+            password,
+            title,
+            img_file,
+        })
     }
 }

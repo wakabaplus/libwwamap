@@ -1,8 +1,5 @@
 use super::Status;
-use crate::{
-    binary::Binary,
-    tiled
-};
+use crate::{binary::Binary, tiled};
 
 pub struct Player {
     pub position: tiled::Map,

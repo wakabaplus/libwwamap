@@ -1,36 +1,33 @@
 use crate::{
-    binary,
-    entity::{
-        EntityArray,
-        player::Player
-    },
+    binary::Binary,
+    entity::{object::Object, player::Player},
     error::Error,
-    string::array::StringArray
+    string::array::StringArray,
 };
 
 pub struct WWAMap {
     pub version: u8,
     pub player: Player,
     pub string: StringArray,
-    pub entity: EntityArray,
+    // pub map: Map,
+    pub object: Object,
 }
 
-impl WWAMap {
-    pub fn parse(bin: &binary::Binary) -> Result<Self, Error> {
+impl TryFrom<Binary> for WWAMap {
+    type Error = Error;
+
+    fn try_from(bin: Binary) -> Result<Self, Self::Error> {
         let version = bin.header[1].to_le_bytes()[0];
         if version != 30 && version != 31 {
             return Err(Error::UnsupportedVersion { version });
         }
 
-        let string: StringArray = StringArray::try_from(bin).unwrap();
-        let player: Player = Player::parse(bin);
-        let entity: EntityArray = EntityArray::from(bin);
-
         Ok(Self {
             version,
-            player,
-            string,
-            entity,
+            player: Player::parse(&bin),
+            string: StringArray::try_from(&bin)?,
+            // map: Map::try_from(bin)?,
+            object: Object::try_from(&bin)?,
         })
     }
 }

@@ -1,8 +1,5 @@
 use super::MoveTo;
-use crate::{
-    error::Error,
-    tiled,
-};
+use crate::{error::Error, tiled};
 
 pub struct Message {
     pub position: tiled::Map,
@@ -14,11 +11,11 @@ pub struct Message {
     // pub dynamic_parts
 }
 
-pub const CHUNK_ID: u8 = 1;
+pub const CHUNK_ID: u16 = 1;
 
-impl TryFrom<&[u8]> for Message {
+impl TryFrom<&Vec<u16>> for Message {
     type Error = Error;
-    fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(chunk: &Vec<u16>) -> Result<Self, Self::Error> {
         let position = tiled::Map::try_from(&chunk[38..])?;
         let move_to = MoveTo::try_from(chunk)?;
 

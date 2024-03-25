@@ -1,8 +1,5 @@
 use super::MoveTo;
-use crate::{
-    error::Error,
-    tiled,
-};
+use crate::{error::Error, tiled};
 
 pub struct Normal {
     pub position: tiled::Map,
@@ -11,12 +8,11 @@ pub struct Normal {
     pub move_to: MoveTo,
 }
 
-pub const CHUNK_ID: u8 = 0;
+pub const CHUNK_ID: u16 = 0;
 
-impl TryFrom<&[u8]> for Normal {
+impl TryFrom<&Vec<u16>> for Normal {
     type Error = Error;
-    fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
-        // TODO: Treat chunk[2] as bool
+    fn try_from(chunk: &Vec<u16>) -> Result<Self, Self::Error> {
         let is_layer = chunk[4].to_le_bytes()[0] == 1;
         let position = tiled::Map::try_from(&chunk[38..])?;
         let move_to = MoveTo::try_from(chunk)?;

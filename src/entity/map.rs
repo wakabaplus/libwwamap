@@ -16,10 +16,10 @@ pub enum Map {
     // ItemCheck = 5,
 }
 
-impl TryFrom<&[u8]> for Map {
+impl TryFrom<&Vec<u16>> for Map {
     type Error = Error;
-    fn try_from(chunk: &[u8]) -> Result<Self, Self::Error> {
-        let b = chunk[6];
+    fn try_from(chunk: &Vec<u16>) -> Result<Self, Self::Error> {
+        let b = chunk[3];
         match b {
             n if n == street::CHUNK_ID => Ok(Self::Street(street::Street::try_from(chunk)?)),
             _ => Err(Error::InvalidByte { byte: b }),

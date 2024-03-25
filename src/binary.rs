@@ -1,23 +1,22 @@
 use crate::{
     error::Error,
+    ext::{U8Ext, VecExt},
     utils::unlikely,
-    ext::{
-        U8Ext,
-        VecExt
-    }
 };
 use core::slice;
 
 pub struct Binary {
     pub(crate) header: Vec<u16>,
-    pub(crate) map: Vec<u8>,
-    pub(crate) object: Vec<u8>,
+    pub(crate) map_tiled: Vec<u16>,
+    pub(crate) object_tiled: Vec<u16>,
+    pub(crate) map_entity: Vec<u16>,
+    pub(crate) object_entity: Vec<u16>,
     pub(crate) str: Vec<u16>,
 }
 
 #[derive(PartialEq)]
 pub enum BinaryOption {
-    IgnoreChecksum
+    IgnoreChecksum,
 }
 
 impl Binary {
@@ -26,30 +25,33 @@ impl Binary {
         for (offset, val) in data.windows(END_OF_COMPRESS_MAGIC.len()).enumerate() {
             if val == END_OF_COMPRESS_MAGIC {
                 let (compressed_ptr, str_ptr) = data.split_at(offset + END_OF_COMPRESS_MAGIC.len());
-                let str: Vec<u16> = str_ptr.to_vec().into_u16();
-
-                let decompresed: Vec<u8> = Binary::decompress(compressed_ptr);
+                let decompresed = Binary::decompress(compressed_ptr);
                 if option != Some(BinaryOption::IgnoreChecksum) {
-                    let _ = Binary::validate(&decompresed)?;
+                    Binary::validate(&decompresed)?;
                 }
 
-                const HEADER_SIZE: usize = 100;
+                const HEADER_SIZE: usize = 90;
                 let (header_ptr, map_ptr) = decompresed.split_at(HEADER_SIZE);
-                let header: Vec<u16> = header_ptr.to_vec().into_u16();
-                assert_eq!(header.len(), HEADER_SIZE / 2);
+                let header = header_ptr.to_vec().into_u16();
 
-                let map_size: u16 = header[23];
-                let map_area: u16 = map_size * map_size; // width * height
-                let map_length: usize = usize::from(map_area * 2); // object_parts, background_parts
+                let map_size = header[23];
+                let map_area = usize::from(map_size * map_size * 2); // width * height * WORD
+                let (map_array, object_array) = map_ptr.split_at(map_area);
+                let (object_array, map_entity) = object_array.split_at(map_area);
 
-                let map: Vec<u8> = map_ptr[..map_length].to_vec();
-                let object: Vec<u8> = map_ptr[map_length..].to_vec();
+                const CHUNK_SIZE: usize = 120;
+                let map_entity_size = usize::from(header[17]) * CHUNK_SIZE;
+                let (map_entity, object_entity) = map_entity.split_at(map_entity_size);
+                let object_entity_size = usize::from(header[18]) * CHUNK_SIZE;
+                let (object_entity, _) = object_entity.split_at(object_entity_size);
 
                 return Ok(Binary {
                     header,
-                    map,
-                    object,
-                    str,
+                    map_tiled: map_array.to_vec().into_u16(),
+                    object_tiled: object_array.to_vec().into_u16(),
+                    map_entity: map_entity.to_vec().into_u16(),
+                    object_entity: object_entity.to_vec().into_u16(),
+                    str: str_ptr.to_vec().into_u16(),
                 });
             }
         }
@@ -77,7 +79,7 @@ impl Binary {
     }
 
     fn validate(bin: &Vec<u8>) -> Result<(), Error> {
-        let correct_checksum: u16= [bin[0], bin[1]].into_u16();
+        let correct_checksum: u16 = [bin[0], bin[1]].into_u16();
         let mut checksum: i32 = 0;
 
         bin.iter().enumerate().skip(2).for_each(|(n, byte)| {
@@ -86,7 +88,10 @@ impl Binary {
         });
         let checksum: u16 = checksum as u16;
         if unlikely(correct_checksum != checksum) {
-            Err(Error::InvalidChecksum { except: correct_checksum, actual: checksum})
+            Err(Error::InvalidChecksum {
+                except: correct_checksum,
+                actual: checksum,
+            })
         } else {
             Ok(())
         }
